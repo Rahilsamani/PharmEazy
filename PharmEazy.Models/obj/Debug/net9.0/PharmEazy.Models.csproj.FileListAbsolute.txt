@@ -1,0 +1,12 @@
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\bin\Debug\net9.0\PharmEazy.Models.deps.json
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\bin\Debug\net9.0\PharmEazy.Models.dll
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\bin\Debug\net9.0\PharmEazy.Models.pdb
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\PharmEazy.Models.csproj.AssemblyReference.cache
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\PharmEazy.Models.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\PharmEazy.Models.AssemblyInfoInputs.cache
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\PharmEazy.Models.AssemblyInfo.cs
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\PharmEazy.Models.csproj.CoreCompileInputs.cache
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\PharmEazy.Models.dll
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\refint\PharmEazy.Models.dll
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\PharmEazy.Models.pdb
+C:\Users\RahilSamani\Desktop\work data\9. DotNet Core\.Net Core Assignment\PharmEazy\PharmEazy.Models\obj\Debug\net9.0\ref\PharmEazy.Models.dll
