@@ -1,0 +1,77 @@
+﻿@page
+@model LoginModel
+
+@{
+	ViewData["Title"] = "Log in";
+}
+
+<div class="row">
+	<div class="col-md-6 offset-4">
+		<h1>@ViewData["Title"]</h1>
+		<section>
+			<form id="account" method="post">
+				<h2>Use a local account to log in.</h2>
+				<hr />
+				<div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+				<div class="form-floating mb-3">
+					<input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Enter Your Email" />
+					<label class="required" asp-for="Input.Email" class="form-label">Email</label>
+					<span asp-validation-for="Input.Email" class="text-danger"></span>
+				</div>
+
+
+				<div class="mb-3">
+					<div class="d-flex">
+						<div class="form-floating flex-grow-1">
+							<input type="text" asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Enter Your Password" />
+							<label class="required" asp-for="Input.Password" class="form-label">Password</label>
+						</div>
+
+						<span class="btn btn-primary eyeIconBtn d-flex justify-content-center align-items-center"
+							  data-target="#Input_Password">
+							<i class="fa-solid fa-eye toggle-eye" aria-hidden="true"></i>
+						</span>
+					</div>
+					<span asp-validation-for="Input.Password" class="text-danger"></span>
+				</div>
+
+				<div class="checkbox mb-3">
+					<label asp-for="Input.RememberMe" class="form-label">
+						<input class="form-check-input" asp-for="Input.RememberMe" />
+						@Html.DisplayNameFor(m => m.Input.RememberMe)
+					</label>
+				</div>
+				<div>
+					<button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+				</div>
+				<div>
+					<p class="mt-3">
+						Don't have an account yet?
+						<a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl"> Create an account</a>
+					</p>
+				</div>
+			</form>
+		</section>
+	</div>
+</div>
+
+@section Scripts {
+	<partial name="_ValidationScriptsPartial" />
+
+	<script>
+		$('.eyeIconBtn').on('click', function(){
+			var targetId = $(this).data('target');
+			var targetInput = $(targetId)[0];
+			const icon = $(this).children('i')[0];
+
+			const makeVisible = targetInput.type === 'password';
+
+			targetInput.type = makeVisible ? 'text' : 'password';
+
+			icon.classList.toggle('fa-eye', !makeVisible);
+			icon.classList.toggle('fa-eye-slash', makeVisible);
+
+		});
+	</script>
+}
+

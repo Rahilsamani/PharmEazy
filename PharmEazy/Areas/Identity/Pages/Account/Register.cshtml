@@ -1,0 +1,166 @@
+﻿@page
+@using PharmEazy.Models
+@model RegisterModel
+@{
+	ViewData["Title"] = "Register";
+}
+
+
+<div class="row">
+	<div class="col-md-6">
+		<h1>@ViewData["Title"]</h1>
+		<form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+			<h2>Create a new account.</h2>
+			<hr />
+			<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+			<div class="form-floating mb-3">
+				<input asp-for="Input.Name" class="form-control" autocomplete="Name" aria-required="true" placeholder="Enter Your Name" />
+				<label class="required" asp-for="Input.Name">Name</label>
+				<span asp-validation-for="Input.Name" class="text-danger"></span>
+			</div>
+
+
+			<div class="form-floating mb-3">
+				<input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Enter Your Email" />
+				<label class="required" asp-for="Input.Email">Email</label>
+				<span asp-validation-for="Input.Email" class="text-danger"></span>
+			</div>
+			<div class="mb-3">
+				<div class="d-flex">
+					<div class="form-floating flex-grow-1">
+						<input type="text" asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Enter Your Password" />
+						<label class="required" asp-for="Input.Password">Password</label>
+					</div>
+
+					<span class="btn btn-primary eyeIconBtn d-flex justify-content-center align-items-center"
+						  data-target="#Input_Password">
+						<i class="fa-solid fa-eye toggle-eye" aria-hidden="true"></i>
+					</span>
+				</div>
+				<span asp-validation-for="Input.Password" class="text-danger"></span>
+			</div>
+			<div class="mb-3">
+				<div class="d-flex">
+					<div class="form-floating flex-grow-1">
+						<input type="text" asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Enter Confirm Password" />
+						<label class="required" asp-for="Input.ConfirmPassword">Confirm Password</label>
+					</div>
+
+					<span class="btn btn-primary eyeIconBtn d-flex justify-content-center align-items-center"
+						  data-target="#Input_ConfirmPassword">
+						<i class="fa-solid fa-eye toggle-eye" aria-hidden="true"></i>
+					</span>
+				</div>
+
+				<span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+			</div>
+
+			<div class="mb-3">
+				<label class="required" asp-for="Input.IntlPhoneNumber">PhoneNumber</label>
+				<input type="tel" asp-for="Input.IntlPhoneNumber" class="form-control" autocomplete="PhoneNumber" aria-required="true" placeholder="Enter Your Phone Number" id="mobileNumber" />
+				<span asp-validation-for="Input.IntlPhoneNumber" class="text-danger"></span>
+
+				<input hidden asp-for="Input.PhoneNumber" type="tel" class="form-control" autocomplete="PhoneNumber" aria-required="true" placeholder="Enter Your Phone Number" />
+				<span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+			</div>
+
+			<div class="mb-3">
+				<label class="required" asp-for="Input.Address">Address</label>
+				<textarea rows="3" asp-for="Input.Address" class="form-control" autocomplete="Address" aria-required="true" placeholder="Enter Your Address"></textarea>
+				<span asp-validation-for="Input.Address" class="text-danger"></span>
+			</div>
+
+			<div class="mb-3">
+				<label class="required" asp-for="Input.DateOfBirth">Date Of Birth</label>
+				<input asp-for="Input.DateOfBirth" class="form-control" autocomplete="Address" aria-required="true" placeholder="Enter Your Date Of Birth" />
+				<span asp-validation-for="Input.DateOfBirth" class="text-danger"></span>
+			</div>
+
+			<div class="mb-3">
+				<label class="required" class="fs-6 fw-medium" asp-for="Input.Gender">Gender</label>
+
+				<span class="d-flex gap-2">
+					@foreach (var gender in Enum.GetValues(typeof(GenderType)))
+					{
+						<input class="form-check-input" type="radio" asp-for="Input.Gender" id="@gender" value="@gender" />
+						<label for="@gender">@gender</label>
+					}
+				</span>
+
+				<span asp-validation-for="Input.Gender" class="text-danger"></span>
+			</div>
+
+			<div class="form-floating mb-3">
+				<select asp-for="Input.Role" class="form-control" asp-items="Html.GetEnumSelectList<RoleTypes>()">
+					<option disabled selected value="">Select Role</option>
+				</select>
+
+				<label class="required" asp-for="Input.Role">Role</label>
+				<span asp-validation-for="Input.Role" class="text-danger"></span>
+			</div>
+
+			<div id="GstNumberContainer" class="form-floating mb-3">
+				<input asp-for="Input.GstNumber" class="form-control" autocomplete="GstNumber" aria-required="true" placeholder="Enter Your Gst Number" />
+				<label asp-for="Input.GstNumber">Gst Number</label>
+				<span asp-validation-for="Input.GstNumber" class="text-danger"></span>
+			</div>
+
+			<button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+		</form>
+	</div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.10.12/build/css/intlTelInput.css">
+
+@section Scripts {
+	<partial name="_ValidationScriptsPartial" />
+	<script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.10.12/build/js/intlTelInput.min.js"></script>
+
+	<script>
+		const input = $("#mobileNumber")[0];
+		var iti = window.intlTelInput(input, {
+		  loadUtils: () => import("https://cdn.jsdelivr.net/npm/intl-tel-input@25.10.12/build/js/utils.js"),
+		  initialCountry: "IN",
+		  separateDialCode: true,
+		});
+
+		$("#mobileNumber").on('input', function(){
+			var number = iti.getNumber();
+
+			$("#Input_PhoneNumber").val(number);
+			console.log("Hello - " + $("#Input_PhoneNumber").val());
+		})
+
+		$('.eyeIconBtn').on('click', function(){
+			var targetId = $(this).data('target');
+			var targetInput = $(targetId)[0];
+			const icon = $(this).children('i')[0];
+
+			const makeVisible = targetInput.type === 'password';
+
+			targetInput.type = makeVisible ? 'text' : 'password';
+
+			icon.classList.toggle('fa-eye', !makeVisible);
+			icon.classList.toggle('fa-eye-slash', makeVisible);
+
+		});
+
+		$("#GstNumberContainer").hide();
+
+		var currentDate = new Date().toISOString().substring(0,10);
+
+		$("#Input_DateOfBirth").prop('max', currentDate);
+
+		var roleInput = $("#Input_Role");
+
+		roleInput.on("change", function(){
+			var selectedOption = roleInput.find(":selected").text();
+
+			if(selectedOption!="Buyer"){
+				$("#GstNumberContainer").show();
+			}else{
+				$("#GstNumberContainer").hide();
+			}
+		})
+	</script>
+}
