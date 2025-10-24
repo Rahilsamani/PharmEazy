@@ -1,0 +1,272 @@
+﻿@model PharmEazy.Models.Category
+
+@{
+	ViewData["Title"] = "Index";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2> Create Categories</h2>
+<hr />
+
+<div class="row">
+	<div class="col-md-8">
+		<form id="CategoryForm">
+			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+			<div class="form-group">
+				<input hidden asp-for="Id" />
+			</div>
+			<div class="form-group">
+				<label asp-for="Name" class="control-label required"></label>
+				<input asp-for="Name" class="form-control mb-1" />
+				<span asp-validation-for="Name" class="text-danger mb-2"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Description" class="control-label required"></label>
+				<input asp-for="Description" class="form-control mb-1" />
+				<span asp-validation-for="Description" class="text-danger mb-2"></span>
+			</div>
+			<div class="form-group mt-3">
+				<input type="submit" value="Create" class="btn btn-primary mb-5" id="categoryBtn" />
+			</div>
+		</form>
+	</div>
+</div>
+
+<h2>
+	All Categories
+</h2>
+<hr />
+
+<form id="searchCategory">
+	<div class="row">
+		<div class="col-md-8">
+			<input name="searchQuery" id="searchQuery" class="form-control" placeholder="Search Category By Name" />
+		</div>
+		<div class="col-md-4">
+			<button type="submit" class="btn btn-info">Search</button>
+		</div>
+	</div>
+</form>
+
+<table id="tblCategory" class="table">
+	<thead>
+		<tr>
+			<th>
+				@Html.DisplayNameFor(model => model.Name)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.Description)
+			</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+
+<nav>
+	<ul id="pagination"></ul>
+</nav>
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+	<script>
+		$(function(){
+			var globalSearchQuery = "";
+			var globalCurrentPage = 1;
+			var totalPages = 1;
+			var target;
+			var Id;
+
+			LoadData(globalSearchQuery,globalCurrentPage);
+
+			$("#searchCategory").on('submit',function(e){
+				e.preventDefault();
+				globalSearchQuery = $("#searchQuery").val()
+				LoadData(globalSearchQuery,globalCurrentPage);
+			})
+
+			$("body").on('click', '.page-link', function(){
+				var navTo = $(this)[0].innerText;
+
+				if(navTo=='Next'){
+					globalCurrentPage++;
+				}else if(navTo=="Previous"){
+					globalCurrentPage--;
+				}else{
+					globalCurrentPage = navTo;
+				}
+
+				LoadData(globalSearchQuery, globalCurrentPage);
+			})
+
+			function LoadPaging() {
+				$("#pagination li").remove();
+				var row = "";
+
+				if (globalCurrentPage > 1){
+					row = row + `<li class="page-item">
+						<span class="page-link" tabindex="-1">Previous</span>
+					</li>`
+				}
+
+				for(i=1;i<=totalPages;i++){
+					row = row + `<li class="page-item ${i==globalCurrentPage? "active" : "" }"><span class="page-link">${i}</span></li>`;
+				}
+
+				if (globalCurrentPage < totalPages){
+					row = row + `<li class="page-item">
+						<span class="page-link">Next</span>
+						</li>`
+				}
+
+				$('#pagination').append(row);
+		}
+
+			function LoadData(searchQuery, currentPage) {
+				$("#tblCategory tbody tr").remove();
+
+				$.ajax({
+					type: 'Get',
+					url: `/Categories/GetCategories?searchQuery=${searchQuery}&currentPage=${currentPage}`,
+					dataType: 'json',
+					success: function (data) {
+						totalPages = data.totalPages;
+
+						if(totalPages>1){
+							LoadPaging();
+						}else if(data.categories.length==0){
+							if(globalCurrentPage>1){
+								globalCurrentPage--;
+								LoadData(globalSearchQuery,globalCurrentPage);
+							}
+							else{
+								var msg = "<tr><td>No Data Found</td></tr>"
+								$('#tblCategory tbody').append(msg);
+								$('#pagination').empty();
+							}
+						}else{
+							$("#pagination li").remove();
+						}
+
+						$.each(data.categories, function (i, item) {
+							var rows = `
+								<tr>
+									<td>
+										${item.name}
+									</td>
+									<td>
+										${item.description}
+									</td>
+									<td>
+										<button data-id="${item.id}" class="btn btn-secondary edit">Edit</button>
+											<a class="btn btn-danger deleteCategory"
+										   data-id="${item.id}"
+										   data-body-message="Are you sure to delete this category?">Delete</a>
+									</td>
+								</tr>
+							`;
+
+						$('#tblCategory tbody').append(rows);
+					});
+				},
+			});
+		}
+
+			// Create Or Delete
+			$("#CategoryForm").on('submit',function(e){
+				e.preventDefault();
+				var data = $("#CategoryForm").serialize();
+
+				$.ajax({
+					type: 'POST',
+					url: "@Url.Action("Save", "Categories")",
+					contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+					data: data,
+					success: function (result) {
+						notyf.dismissAll();
+						if(result.success==true){
+							LoadData(globalSearchQuery,globalCurrentPage);
+							$("#CategoryForm")[0].reset();
+							notyf.success(result.message);
+						}else{
+							notyf.error(result.message);
+						}
+					}
+				});
+			});
+
+			// Fill Form With Category Data
+			$("body").on('click', '.edit', (e) => {
+				e.preventDefault();
+
+				target = e.target;
+				var Id = $(target).data('id');
+
+				$.ajax({
+					type: "GET",
+					url: "/Categories/GetCategory/"+Id,
+					success: function(response){
+						$("#Id").val(Id)
+						$("#Name").val(response.name)
+						$("#Description").val(response.description)
+						$("#categoryBtn").val("Update")
+					}
+				})
+			})
+
+			$('body').append(`
+				<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+					<div class="modal-dialog" role="document">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h4 class="modal-title" id="myModalLabel">Warning</h4>
+							</div>
+							<div class="modal-body delete-modal-body">
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default" data-dismiss="modal" id="cancel-delete">Cancel</button>
+								<button type="button" class="btn btn-danger" id="confirm-delete">Delete</button>
+							</div>
+						</div>
+					</div>
+				</div>`);
+
+			//Delete Action
+			$("body").on('click', '.deleteCategory', (e) => {
+				e.preventDefault();
+
+				target = e.target;
+				Id = $(target).data('id');
+				var bodyMessage = $(target).data('body-message');
+
+				$(".delete-modal-body").text(bodyMessage);
+				$("#deleteModal").modal('show');
+			});
+
+			$("#confirm-delete").on('click', () => {
+				$.ajax({
+					type: "POST",
+					url: "/Categories/Delete/"+Id,
+					success: function(result){
+						notyf.dismissAll();
+						if(result.success==true){
+							notyf.success(result.message);
+							LoadData(globalSearchQuery,globalCurrentPage);
+						}else{
+							notyf.error(result.message);
+						}
+					}
+				})
+			});
+
+			$("#cancel-delete").on('click', () => {
+				$("#deleteModal").modal('hide');
+			});
+		})
+	</script>
+}
+
