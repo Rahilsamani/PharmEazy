@@ -1,0 +1,479 @@
+﻿@model PharmEazy.Models.MedicineViewModel;
+
+@{
+	ViewData["Title"] = "Index";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+	var categoriesList = ViewBag.CategoryList;
+}
+
+<h1>Create Medicine</h1>
+
+<div class="row">
+	<div class="col-md-8">
+		<form id="medicineForm" enctype="multipart/form-data">
+			<div asp-validation-summary="All" class="text-danger"></div>
+			<div id="validationErrors"></div>
+			<div id="previewContainer">
+			</div>
+			<input hidden type="number" asp-for="MedicineId" class="form-control mb-2" />
+			<div class="form-group">
+				<label asp-for="Name" class="control-label required"></label>
+				<input asp-for="Name" class="form-control mb-2" />
+				<span asp-validation-for="Name" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="CategoryId" class="control-label required"></label>
+
+				<select asp-items="@(new SelectList(categoriesList, "Id", "Name"))" asp-for="CategoryId" class="form-control mb-2">
+					<option disabled selected value="">Select Category</option>
+				</select>
+
+				<span asp-validation-for="CategoryId" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Description" class="control-label required"></label>
+				<textarea asp-for="Description" class="form-control mb-2"></textarea>
+				<span asp-validation-for="Description" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="medicineImage" class="control-label required"></label>
+				<input asp-for="medicineImage" class="form-control mb-2" />
+				<span asp-validation-for="medicineImage" class="text-danger"></span>
+			</div>
+
+			<h5>Enter Stock Details: </h5>
+			<div id="stock-container" class="my-3 d-flex justify-content-sm-start align-items-sm-start flex-wrap gap-2">
+
+				@for (int i = 0; i < Model.Stocks.Count; i++)
+				{
+					<div class="stock-row">
+						<div class="d-flex justify-content-between">
+							<h6>Stock:</h6>
+							@if (i != 0)
+							{
+								<i class="fa-solid fa-trash btn text-danger deleteStock"></i>
+							}
+						</div>
+
+						<div class="form-group">
+							<label asp-for="Stocks[i].Quantity" class="control-label required"></label>
+							<input asp-for="Stocks[i].Quantity" class="form-control mb-2" />
+							<span asp-validation-for="Stocks[i].Quantity" class="text-danger"></span>
+						</div>
+						<div class="form-group">
+							<label asp-for="Stocks[i].ExpiryDate" class="control-label required"></label>
+							<input type="date" asp-for="Stocks[i].ExpiryDate" class="form-control mb-2 stock-expiry" />
+							<span asp-validation-for="Stocks[i].ExpiryDate" class="text-danger"></span>
+						</div>
+						<div class="form-group mb-4">
+							<label asp-for="Stocks[i].Price" class="control-label required"></label>
+							<input asp-for="Stocks[i].Price" class="form-control mb-2" />
+							<span asp-validation-for="Stocks[i].Price" class="text-danger"></span>
+						</div>
+					</div>
+				}
+
+			</div>
+
+			<div class="form-group">
+				<p id="addMoreStock" class="btn btn-secondary">
+					Add More Stocks
+				</p>
+			</div>
+
+			<div class="form-group">
+				<button class="btn btn-primary" id="medicineBtn">Save Medicine</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<h2 class="mt-5">Medicines</h2>
+
+<form id="searchMedicine">
+	<div class="row">
+		<div class="col-md-8">
+			<input id="searchQuery" name="searchQuery" class="form-control" placeholder="Search Medicines By Name" />
+		</div>
+		<div class="col-md-4">
+			<button type="submit" class="btn btn-info">Search</button>
+		</div>
+	</div>
+</form>
+
+<table id="tblMedicine" class="table">
+	<thead>
+		<tr>
+			<th>
+				Image
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.Name)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.Description)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.Stocks[0].ExpiryDate)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.Stocks[0].Price)
+			</th>
+			<th>
+				@Html.DisplayNameFor(model => model.Stocks[0].Quantity)
+			</th>
+			<th>
+				Action
+			</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+	</tbody>
+</table>
+
+<nav>
+	<ul id="pagination"></ul>
+</nav>
+
+
+@section Scripts {
+	<script>
+		$(function(){
+			var stockIndex = 1;
+			var globalSearchQuery = "";
+			var globalCurrentPage = 1;
+			var totalPages = 1;
+			var target;
+			var Id;
+
+			LoadData(globalSearchQuery,globalCurrentPage);
+			restrictStockExpiry();
+
+			function LoadData(searchQuery, currentPage) {
+				$("#tblMedicine tbody tr").remove();
+
+				$.ajax({
+					type: 'Get',
+					url: `/Medicine/GetMedicines?searchQuery=${searchQuery}&currentPage=${currentPage}`,
+					dataType: 'json',
+					success: function (data) {
+
+						totalPages = data.totalPages;
+
+						if(totalPages>1){
+							LoadPaging();
+						}else if(data.medicines.length==0){
+							if(globalCurrentPage>1){
+								globalCurrentPage--;
+								LoadData(globalSearchQuery,globalCurrentPage);
+							}
+							else{
+								var msg = "<tr><td>No Data Found</td></tr>"
+								$('#tblMedicine tbody').append(msg);
+								$('#pagination').empty();
+							}
+						}else{
+							$("#pagination li").remove();
+						}
+
+						$.each(data.medicines, function (i, item) {
+
+							var rows = `
+								<tr>
+									<td>
+										<a href="/Medicine/MedicineDetail/${item.id}">
+											<img class="img-thumbnail" src="/Images/${item.imageUrl}" width="150" />
+										</a>
+									</td>
+									<td>
+										${item.name}
+									</td>
+									<td>
+										${item.description}
+									</td>
+							`;
+
+							var stocksExpiry = "<td>";
+							for(i=0;i<item.stocks.length;i++){
+								stocksExpiry = stocksExpiry + `<p>${item.stocks[i].expiryDate.substring(0,10)}</p>`;
+							}
+							stocksExpiry = stocksExpiry + "</td>";
+							rows = rows + stocksExpiry;
+
+
+							var stocksPrice = "<td>";
+							for(i=0;i<item.stocks.length;i++){
+								stocksPrice = stocksPrice + `<p>${item.stocks[i].price}</p>`;
+							}
+							stocksPrice = stocksPrice + "</td>";
+							rows = rows + stocksPrice;
+
+
+							var stocksQty = "<td>";
+							for(i=0;i<item.stocks.length;i++){
+								stocksQty = stocksQty + `<p>${item.stocks[i].quantity}</p>`;
+							}
+							stocksQty = stocksQty + "</td>";
+							rows = rows + stocksQty;
+
+							rows = rows + `<td>
+									<button data-id="${item.id}" class="btn btn-secondary edit">Edit</button>
+											<a class="btn btn-danger deleteMedicine"
+										   data-id="${item.id}"
+										   data-body-message="Are you sure to delete this Medicine?">Delete</a>
+									</td></tr>`;
+
+
+						$('#tblMedicine tbody').append(rows);
+					});
+				},
+			});
+		}
+
+		$("#medicineImage").on('change', function(event){
+			var input = event.target;
+			$("#previewContainer").empty();
+
+			if (input.files && input.files[0])
+			  {
+				var filerdr = new FileReader();
+				filerdr.onload = function(e) {
+					var previewImage = `<div class="d-flex justify-content-center">
+					<img id="previewImage" class="rounded-circle my-2" src="${e.target.result}" width="150" />
+				</div>`;
+				$("#previewContainer").append(previewImage);
+				};
+				filerdr.readAsDataURL(input.files[0]);
+			  }
+		})
+
+			$("#addMoreStock").on('click', function(){
+				var stockRow = `<div class="stock-row">
+						<div class="d-flex justify-content-between">
+							<h6>Stock:</h6>
+								<i class="fa-solid fa-trash text-danger btn deleteStock"></i>
+						</div>
+
+						<div class="form-group">
+							<label class="control-label required">Quantity</label>
+							<input name="Stocks[${stockIndex}].Quantity" class="form-control mb-2" />
+							<span asp-validation-for="Stocks[${stockIndex}].Quantity" class="text-danger"></span>
+						</div>
+						<div class="form-group">
+							<label class="control-label required">Expiry Date</label>
+							<input type="date" name="Stocks[${stockIndex}].ExpiryDate" class="form-control mb-2 stock-expiry" />
+							<span asp-validation-for="Stocks[${stockIndex}].ExpiryDate" class="text-danger"></span>
+						</div>
+						<div class="form-group mb-4">
+							<label class="control-label required">Price</label>
+							<input name="Stocks[${stockIndex}].Price" class="form-control mb-2" />
+							<span asp-validation-for="Stocks[${stockIndex}].Price" class="text-danger"></span>
+						</div></div>`;
+
+
+				$('#stock-container').append(stockRow);
+				restrictStockExpiry();
+				stockIndex++;
+			});
+
+			$("#stock-container").on("click", ".deleteStock" , function (){
+				$(this).closest('.stock-row').remove();
+			});
+
+			$("#searchMedicine").on('submit',function(e){
+				e.preventDefault();
+				globalSearchQuery = $("#searchQuery").val()
+				LoadData(globalSearchQuery,globalCurrentPage);
+			})
+
+			$("body").on('click', '.edit', (e) => {
+				e.preventDefault();
+
+				target = e.target;
+
+				var Id = $(target).data('id');
+
+				var previewImage = `<div class="d-flex justify-content-center">
+					<img id="previewImage" class="rounded-circle my-2" src="~/Images/emptyImage.jpg" width="150" />
+				</div>`;
+
+				$.ajax({
+					type: "GET",
+					url: "/Medicine/GetMedicine/"+Id,
+
+					success: function(response){
+						$("#MedicineId").val(Id);
+						$("#Name").val(response.name);
+						$("#Description").val(response.description);
+						$("#medicineBtn").text("Update Medicine");
+						$("#medicineBtn").attr("id","editMedicine");
+						$('.stock-row').empty();
+
+						$("#previewContainer").empty();
+						$("#previewContainer").append(previewImage);
+						$("#previewImage").attr("src", "/images/"+response.imageUrl);
+						$("#stock-container").empty();
+						$("#CategoryId").val(response.categoryId)
+
+						for(i=0;i<response.stocks.length;i++){
+							let expDate = response.stocks[i].expiryDate.substring(0,10);
+
+							var stockRow =
+								`<div class="stock-row" ><h6>Stock:</h6>
+
+								<input hidden type="number" name="Stocks[${i}].StockId" value="${response.stocks[i].id}"  />
+
+								<div class="form-group">
+									<label class="control-label required">Quantity</label>
+									<input name="Stocks[${i}].Quantity" value="${response.stocks[i].quantity}" class="form-control mb-2" />
+									<span asp-validation-for="Stocks[${i}].Quantity" class="text-danger"></span>
+								</div>
+								<div class="form-group">
+									<label class="control-label required">Expiry Date</label>
+									<input type="date" name="Stocks[${i}].ExpiryDate" value="${expDate}" class="form-control mb-2 stock-expiry" />
+									<span asp-validation-for="Stocks[${i}].ExpiryDate" class="text-danger"></span>
+								</div>
+								<div class="form-group">
+									<label class="control-label required">Price</label>
+									<input name="Stocks[${i}].Price" value="${response.stocks[i].price}" class="form-control mb-2" />
+									<span asp-validation-for="Stocks[${i}].Price" class="text-danger"></span>
+								</div></div>`;
+
+								$('#stock-container').append(stockRow);
+								restrictStockExpiry();
+							}
+						}
+					});
+			});
+
+			$("body").on('click', '.page-link', function(){
+				var navTo = $(this)[0].innerText;
+
+				if(navTo=='Next'){
+					globalCurrentPage++;
+				}else if(navTo=="Previous"){
+					globalCurrentPage--;
+				}else{
+					globalCurrentPage = navTo;
+				}
+
+				LoadData(globalSearchQuery, globalCurrentPage);
+
+			})
+
+			function LoadPaging() {
+				$("#pagination li").remove();
+				var row = "";
+
+				if (globalCurrentPage > 1){
+					row = row + `<li class="page-item">
+						<span class="page-link" tabindex="-1">Previous</span>
+					</li>`
+				}
+
+				for(i=1;i<=totalPages;i++){
+					row = row + `<li class="page-item ${i==globalCurrentPage? "active" : "" }"><span class="page-link">${i}</span></li>`;
+				}
+
+				if (globalCurrentPage < totalPages){
+					row = row + `<li class="page-item">
+						<span class="page-link">Next</span>
+						</li>`
+				}
+
+				$('#pagination').append(row);
+			}
+
+			$('body').append(`
+				<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+					<div class="modal-dialog" role="document">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h4 class="modal-title" id="myModalLabel">Warning</h4>
+							</div>
+							<div class="modal-body delete-modal-body">
+							</div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default" data-dismiss="modal" id="cancel-delete">Cancel</button>
+								<button type="button" class="btn btn-danger" id="confirm-delete">Delete</button>
+							</div>
+						</div>
+					</div>
+				</div>`);
+
+			//Delete Action
+			$("body").on('click', '.deleteMedicine', (e) => {
+				e.preventDefault();
+
+				target = e.target;
+				Id = $(target).data('id');
+				var bodyMessage = $(target).data('body-message');
+
+				$(".delete-modal-body").text(bodyMessage);
+				$("#deleteModal").modal('show');
+			});
+
+			$("#confirm-delete").on('click', () => {
+				$.ajax({
+					type: "POST",
+					url: "/Medicine/Delete/"+Id,
+					success: function(result){
+						notyf.dismissAll();
+						if(result.success==true){
+							notyf.success(result.message);
+							LoadData(globalSearchQuery,globalCurrentPage);
+						}else{
+							notyf.error(result.message);
+						}
+					}
+				})
+			});
+
+			$("#cancel-delete").on('click', () => {
+				$("#deleteModal").modal('hide');
+			});
+
+			function restrictStockExpiry(){
+				var currentDate = new Date().toISOString().substring(0,10);
+
+				$(".stock-expiry").prop('min', currentDate);
+			}
+
+			// Create Or Delete
+			$("#medicineForm").on('submit',function(e){
+				e.preventDefault();
+				var formData = new FormData(this);
+
+				$("#validationErrors").empty();
+
+				$.ajax({
+					type: 'POST',
+					url: "@Url.Action("Save", "Medicine")",
+					contentType: false,
+					processData: false,
+					data: formData,
+					success: function (result) {
+						notyf.dismissAll();
+						if(result?.success==true){
+							LoadData(globalSearchQuery,globalCurrentPage);
+							$("#previewContainer").empty();
+							$("#medicineForm")[0].reset();
+							$("#medicineForm").find('input').val("");
+							$(':input[type="number"]').val(0);
+							$("#editMedicine").text("Save Medicine");
+							notyf.success(result.message);
+						}else if(result?.success==false){
+							notyf.error(result.message);
+						}else{
+							for(i=0;i<result.length;i++){
+								var li = `<li class="text-danger" >${result[i]}</li>`;
+								$("#validationErrors").append(li);
+							}
+						}
+					}
+				});
+			});
+		})
+	</script>
+}

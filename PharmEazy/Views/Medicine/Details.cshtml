@@ -1,0 +1,234 @@
+﻿@model PharmEazy.Models.Medicine
+@using System.Text.Json
+
+@{
+	var availableStockIndex = 0;
+	var eligibleToBuy = ViewBag.EligibleToBuy ?? true;
+
+	for (int i = 0; i < Model.stocks.Count; i++)
+	{
+		if (Model.stocks[i].Quantity > 0)
+		{
+			availableStockIndex = i;
+			break;
+		}
+	}
+}
+
+<div class="container py-5">
+	<div class="row">
+		<!-- Product Images -->
+		<div class="col-md-6 mb-4">
+			<div class="card">
+				<img src="~/Images/@Model.ImageUrl" class="card-img-top" alt="Medicine Image">
+
+				@if (Model.stocks[availableStockIndex].Quantity == 0)
+				{
+					<div class="outOfStock">Out Of Stock</div>
+				}
+			</div>
+		</div>
+
+		<!-- Product Details -->
+		<div class="col-md-6">
+			<h1 class="h2 mb-3">@Model.Name</h1>
+
+			<p class="mb-2">@Model.Description</p>
+
+			<div class="mb-2">
+				<b>Expiry Date:</b>
+
+				<select class="form-control" id="expiryInput">
+					@for (int i = 0; i < Model.stocks.Count; i++)
+					{
+						if (i == availableStockIndex)
+						{
+							<option selected data-quantity="@Model.stocks[i].Quantity" data-price="@Model.stocks[i].Price" data-id="@Model.stocks[i].Id">@Model.stocks[i].ExpiryDate?.ToString("dd/MM/yyyy")</option>
+						}
+						else
+						{
+							<option data-quantity="@Model.stocks[i].Quantity" data-price="@Model.stocks[i].Price" data-id="@Model.stocks[i].Id">@Model.stocks[i].ExpiryDate?.ToString("dd/MM/yyyy")</option>
+
+						}
+					}
+				</select>
+			</div>
+
+			<div class="mb-2">
+				<b>Stock Available:</b> <span id="medicineStockQuantity">@Model.stocks[availableStockIndex].Quantity</span>
+			</div>
+
+			<div class="mb-3 h4">
+				Price: ₹
+				<span id="medicinePrice" class="me-2">@Model.stocks[availableStockIndex].Price</span>
+			</div>
+
+			<!-- Quantity -->
+			@if (eligibleToBuy)
+			{
+				<div class="mb-4">
+					<div class="d-flex align-items-center">
+						<label class="me-2">Quantity:</label>
+						<input class="form-control" type="number" value="1" max="@Model.stocks[availableStockIndex].Quantity" data-stock-id="@Model.stocks[availableStockIndex].Id" id="quantity" min="1" />
+					</div>
+				</div>
+			}
+
+			<!-- Actions -->
+			@if (Model.stocks[availableStockIndex].Quantity != 0 && eligibleToBuy)
+			{
+				<div class="gap-2" id="actionButtonsContainer">
+					<button class="btn btn-primary" type="button" id="AddToCart">Add to Cart</button>
+					<button id="buyNow" class="btn btn-success" type="button">Buy Now</button>
+				</div>
+			}
+		</div>
+	</div>
+</div>
+
+
+
+@section Scripts {
+	<script>
+		$("#AddToCart").on('click', function(){
+			var quantityInput = $("#quantity");
+			var quantity = quantityInput.val();
+			var stockId = $("#expiryInput").find(":selected").data("id");
+			var availableStock = $("#medicineStockQuantity").text();
+			var MedicineId = "@Model.Id";
+
+			notyf.dismissAll();
+
+			if(quantity<1){
+				notyf.error('Please Select More Than One Quantity');
+				return;
+			}
+
+			$.ajax({
+				url: '@Url.Action("AddCartItem", "Cart")',
+				contentType: 'application/json; charset=utf-8',
+				data: JSON.stringify({quantity, stockId, MedicineId}),
+				type: 'POST',
+				success: function(result){
+					if(result.success==true){
+						notyf.success(result.message);
+					}
+					else{
+						notyf.error(result.message);
+					}
+				}
+			})
+
+		})
+
+		$("#expiryInput").on("change", function(){
+			var selectedOption = $("#expiryInput").find(":selected");
+
+			var price = selectedOption.data("price");
+			var quantity = selectedOption.data("quantity");
+
+			if(quantity==0){
+				$("#actionButtonsContainer").hide();
+				$('.card').append(`<div class="outOfStock">Out Of Stock</div>`);
+			}else{
+				$("#actionButtonsContainer").show();
+				$('.outOfStock').remove();
+			}
+
+			$("#medicinePrice").text(price);
+			$("#medicineStockQuantity").text(quantity);
+		})
+
+		var medicineBuyedQuantity = 0;
+		var availableMedicine = 0;
+		var modelData;
+
+		$("#buyNow").on("click", function(){
+			medicineBuyedQuantity = $("#quantity").val();
+
+			var selectedOption = $("#expiryInput").find(":selected");
+			var stockId = selectedOption.data("id");
+
+			modelData = @Html.Raw(Json.Serialize(Model))
+
+			modelData.stocks = modelData.stocks.filter(stock => stock.id == stockId)
+
+			modelData.stocks[0].quantity = parseInt(medicineBuyedQuantity);
+
+			availableMedicine = $("#medicineStockQuantity").text();
+
+			notyf.dismissAll();
+
+			if(availableMedicine==0){
+				notyf.error('Stock is not available');
+				return;
+			}
+
+			if(medicineBuyedQuantity>parseInt(availableMedicine)){
+				notyf.error('Please Select Less Than Available Items');
+				return;
+			}
+
+			if(medicineBuyedQuantity<1){
+				notyf.error('Please Select More Than One Quantity');
+				return;
+			}
+
+			if(medicineBuyedQuantity>=50){
+				var bodyMessage = `Are You Sure, You wants to Buy ${medicineBuyedQuantity} Items of ${modelData.name}`;
+				$(".BuyAlertModal-modal-body").text(bodyMessage);
+				$("#BuyAlertModal").modal('show');
+
+				return;
+			}
+
+			buyMedicine(availableMedicine, medicineBuyedQuantity, modelData)
+
+		})
+
+		function buyMedicine(availableStock, Buyedquantity, model){
+			$.ajax({
+				url: '@Url.Action("BuyMedicine", "Orders")',
+				contentType: 'application/json; charset=utf-8',
+				data: JSON.stringify(model),
+				type: 'POST',
+				success: function(result){
+					if(result.success==true){
+						notyf.success(result.message);
+						$("#medicineStockQuantity").text(parseInt(availableStock)-Buyedquantity);
+						$("#quantity").val(1);
+					}else{
+						notyf.error(result.message);
+					}
+				}
+			})
+		}
+
+		$("body").on('click','#confirm-buy', () => {
+			buyMedicine(availableMedicine, medicineBuyedQuantity, modelData);
+			$("#BuyAlertModal").modal('hide');
+		});
+
+		$("body").on('click', '#cancel-buy', () => {
+			$("#BuyAlertModal").modal('hide');
+		});
+
+		$('body').append(`
+			<div class="modal fade" id="BuyAlertModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h4 class="modal-title" id="myModalLabel">Warning</h4>
+						</div>
+						<div class="modal-body BuyAlertModal-modal-body"></div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal" id="cancel-buy">Cancel</button>
+							<button type="button" class="btn btn-success" id="confirm-buy">Confirm</button>
+						</div>
+					</div>
+				</div>
+			</div>`);
+	</script>
+}
+
+

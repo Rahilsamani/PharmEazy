@@ -792,23 +792,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Admin\\.nuget\\packages\\": {},
+    "C:\\Users\\RahilSamani\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Admin\\Downloads\\.Net Core\\PharmEazy\\PharmEazy.Models\\PharmEazy.Models.csproj",
+      "projectUniqueName": "C:\\Users\\RahilSamani\\Desktop\\work data\\9. DotNet Core\\.Net Core Assignment\\PharmEazy\\PharmEazy.Models\\PharmEazy.Models.csproj",
       "projectName": "PharmEazy.Models",
-      "projectPath": "C:\\Users\\Admin\\Downloads\\.Net Core\\PharmEazy\\PharmEazy.Models\\PharmEazy.Models.csproj",
-      "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Admin\\Downloads\\.Net Core\\PharmEazy\\PharmEazy.Models\\obj\\",
+      "projectPath": "C:\\Users\\RahilSamani\\Desktop\\work data\\9. DotNet Core\\.Net Core Assignment\\PharmEazy\\PharmEazy.Models\\PharmEazy.Models.csproj",
+      "packagesPath": "C:\\Users\\RahilSamani\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\RahilSamani\\Desktop\\work data\\9. DotNet Core\\.Net Core Assignment\\PharmEazy\\PharmEazy.Models\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\RahilSamani\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -817,6 +817,7 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -835,7 +836,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "9.0.200"
     },
     "frameworks": {
       "net9.0": {
@@ -862,7 +863,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
