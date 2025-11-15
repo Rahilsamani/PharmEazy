@@ -1,0 +1,233 @@
+﻿@model List<PharmEazy.Models.Medicine>
+@{
+	ViewData["Title"] = "Home Page";
+	var isBuyer = ViewBag.isBuyer ?? true;
+	var userId = ViewBag.userId;
+}
+
+<form id="searchMedicine">
+	<div class="row mt-5">
+		<div class="col-md-8">
+			<input id="searchQuery" name="searchQuery" class="form-control" placeholder="Search Medicine By Name" />
+		</div>
+		<div class="col-md-4">
+			<button type="submit" class="btn btn-info">Search</button>
+		</div>
+	</div>
+</form>
+
+<div class="container py-5">
+	<h2 class="text-center mb-4">Medicines</h2>
+	<div id="medicineContainer" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+	</div>
+</div>
+
+<nav aria-label="...">
+	<ul id="pagination"></ul>
+</nav>
+
+@section Scripts {
+	<script>
+		$(function(){
+			$("body").on('click','.addToCartBtn', function(e){
+				e.stopPropagation();
+				e.preventDefault();
+
+				var medicineId = $(this).siblings(".medicineId")[0].innerText;
+				var stockId = $(this).siblings(".stockId")[0].innerText;
+				var countElement = $(this).siblings('.cartQuantityContainer').children('.cartQuantityCount');
+				var availableCountElement = $(this).siblings('.cartQuantityContainer').children('.availableStock');
+
+				var model = {
+					MedicineId : medicineId,
+					Quantity : parseInt(countElement.text()),
+					UserId : "",
+					stockId : stockId
+				};
+
+				$.ajax({
+				url: '@Url.Action("AddCartItem", "Cart")',
+					contentType: 'application/json; charset=utf-8',
+					data: JSON.stringify(model),
+					type: 'POST',
+					success: function(result){
+						notyf.dismissAll();
+
+						if(result.success==true){
+							var newAvailableCount = parseInt(availableCountElement.text()) - parseInt(countElement.text());
+
+							availableCountElement.text(newAvailableCount);
+
+							countElement.text(1);
+							notyf.success(result.message);
+						}else{
+							notyf.error(result.message);
+						}
+					}
+				})
+			})
+
+			function changeCartCount(event, action){
+				event.stopPropagation();
+				event.preventDefault();
+				var countElement = $(event.target).siblings('.cartQuantityCount');
+				var currentCount = countElement.text();
+				var avialableStock = $(event.target).siblings('.availableStock').text();
+
+				if(action=="sub"&&currentCount>1){
+					countElement.text(parseInt(currentCount)-1);
+				}else if(action=="add"&&currentCount<parseInt(avialableStock)){
+					countElement.text(parseInt(currentCount)+1);
+				}
+			}
+
+			$("body").on('click', '.increaseQuantity', function(e){
+				changeCartCount(e,"add");
+			})
+
+			$("body").on('click', '.decreaseQuantity', function(e){
+				changeCartCount(e,"sub");
+			})
+
+			var globalSearchQuery = "";
+			var globalCurrentPage = 1;
+			var totalPages = 1;
+
+			LoadData(globalSearchQuery,globalCurrentPage);
+
+			$("#searchMedicine").on('submit',function(e){
+				e.preventDefault();
+				globalSearchQuery = $("#searchQuery").val()
+				LoadData(globalSearchQuery,globalCurrentPage);
+			})
+
+			$("body").on('click', '.page-link', function(){
+				var navTo = $(this)[0].innerText;
+
+				if(navTo=='Next'){
+					globalCurrentPage++;
+				}else if(navTo=="Previous"){
+					globalCurrentPage--;
+				}else{
+					globalCurrentPage = navTo;
+				}
+
+				LoadData(globalSearchQuery, globalCurrentPage);
+			})
+
+			function LoadPaging() {
+				$("#pagination li").remove();
+				var row = "";
+
+				if (globalCurrentPage > 1){
+					row = row + `<li class="page-item">
+						<span class="page-link" tabindex="-1">Previous</span>
+					</li>`
+				}
+
+				for(i=1;i<=totalPages;i++){
+					row = row + `<li class="page-item ${i==globalCurrentPage? "active" : "" }"><span class="page-link">${i}</span></li>`;
+				}
+
+				if (globalCurrentPage < totalPages){
+					row = row + `<li class="page-item">
+						<span class="page-link">Next</span>
+						</li>`
+				}
+
+				$('#pagination').append(row);
+			}
+
+			function LoadData(searchQuery, currentPage) {
+				$("#medicineContainer a").remove();
+				var sellerId = "";
+
+				$.ajax({
+					type: 'Get',
+					url: `/Medicine/GetMedicines?searchQuery=${searchQuery}&currentPage=${currentPage}`,
+					dataType: 'json',
+					success: function (data) {
+						totalPages = data.totalPages;
+
+						if(totalPages>1){
+							LoadPaging();
+						}else if(data.medicines.length==0){
+							if(globalCurrentPage>1){
+								globalCurrentPage--;
+								LoadData(globalSearchQuery,globalCurrentPage);
+							}
+							else{
+								var msg = "<a>No Data Found</a>"
+								$('#medicineContainer').append(msg);
+								$('#pagination').empty();
+							}
+						}else{
+							$("#medicineContainer a").remove();
+								$('#pagination').empty();
+						}
+
+						$.each(data.medicines, function (i, medicine) {
+							var availableIndex = 0;
+							sellerId = medicine.sellerId;
+
+							for(ind=0;ind<medicine.stocks.length;ind++){
+								if(parseInt(medicine.stocks[ind].quantity)>0){
+									availableIndex = ind;
+									break;
+								}
+							}
+
+							var medicineRow = `
+								<a class="text-decoration-none" href="/Medicine/MedicineDetail/${medicine.id}">
+								<div class="col">
+									<div class="card h-100 shadow-sm">
+										<img height="200px" src="/Images/${medicine.imageUrl}" class="card-img-top" alt="${medicine.name}">
+										<div class="card-body">
+											<h5 class="card-title">${medicine.name}</h5>
+											<p class="card-text">${medicine.description}</p>
+											<div class="d-flex justify-content-between align-items-center">
+												<span class="h5 mb-0">₹${medicine.stocks[availableIndex].price}</span>
+							`;
+
+							if(medicine.stocks[availableIndex].quantity!=0){
+								medicineRow += `<span class="cartQuantityContainer" ><button class="btn btn-secondary decreaseQuantity btn-sm" >-</button><span class="cartQuantityCount" >1</span><span hidden class="availableStock" >${medicine.stocks[availableIndex].quantity}</span><button class="btn btn-secondary btn-sm increaseQuantity" >+</button></span>
+												<span class="btn btn-danger btn-sm addToCartBtn"><i class="fa-solid fa-cart-shopping"></i></span>
+												<span hidden class="medicineId">${medicine.id}</span>
+												<span hidden class="stockId">${medicine.stocks[availableIndex].id}</span>
+										</div>
+								</div>`;
+							}
+
+							if(medicine.stocks[availableIndex].quantity<=0){
+								medicineRow += `</div>
+										</div><div class="outOfStock" >Out Of Stock</div>`;
+							}
+
+							medicineRow+= `</div></div></a>`;
+
+							$('#medicineContainer').append(medicineRow);
+
+							if(medicine.sellerId=="@userId")
+							{
+								console.log("Seller Id Found - " + "@userId");
+								var lastCreatedElement = $('#medicineContainer').children().last();
+
+								lastCreatedElement.find(".cartQuantityContainer").hide();
+
+								lastCreatedElement.find(".addToCartBtn").hide();
+							}
+
+						});
+
+						if("@isBuyer"=="False"){
+							$(".cartQuantityContainer").hide();
+							$(".addToCartBtn").hide();
+						}
+					},
+				});
+			}
+		});
+	</script>
+}
+
+

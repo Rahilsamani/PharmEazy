@@ -1,0 +1,168 @@
+﻿@model PharmEazy.Models.DTO.AllUserDTO
+
+<div class="container">
+	<h1>All Users</h1>
+
+	<form id="searchUser" asp-action="Index">
+		<div class="row">
+			<div class="col-md-8">
+				<input id="searchQuery" name="searchQuery" class="form-control" placeholder="Search Users By Name" />
+			</div>
+			<div class="col-md-4">
+				<button type="submit" class="btn btn-info">Search</button>
+			</div>
+		</div>
+	</form>
+
+	<div class="row">
+		<div class="col-lg-12">
+			<div class="main-box clearfix">
+				<div class="table-responsive">
+					<table id="tblUser" class="table">
+						<thead>
+							<tr>
+								<th>
+									@Html.DisplayNameFor(model => model.Name)
+								</th>
+								<th>@Html.DisplayNameFor(m => m.Email)</th>
+								<th>@Html.DisplayNameFor(m => m.PhoneNumber)</th>
+								<th>@Html.DisplayNameFor(m => m.Address)</th>
+								<th>@Html.DisplayNameFor(m => m.RoleName)</th>
+								<th>@Html.DisplayNameFor(m => m.GstNumber)</th>
+								<th><span>Orders</span></th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<nav>
+		<ul id="pagination"></ul>
+	</nav>
+</div>
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+
+	<script>
+		$(function(){
+			var globalSearchQuery = "";
+			var globalCurrentPage = 1;
+			var totalPages = 1;
+
+			LoadData(globalSearchQuery,globalCurrentPage);
+
+			$("#searchUser").on('submit',function(e){
+				e.preventDefault();
+				globalSearchQuery = $("#searchQuery").val()
+				LoadData(globalSearchQuery,globalCurrentPage);
+			})
+
+			$("body").on('click', '.page-link', function(){
+				var navTo = $(this)[0].innerText;
+
+				if(navTo=='Next'){
+					globalCurrentPage++;
+				}else if(navTo=="Previous"){
+					globalCurrentPage--;
+				}else{
+					globalCurrentPage = navTo;
+				}
+
+				LoadData(globalSearchQuery, globalCurrentPage);
+
+			})
+
+			function LoadPaging() {
+				$("#pagination li").remove();
+				var row = "";
+
+				if (globalCurrentPage > 1){
+					row = row + `<li class="page-item">
+						<span class="page-link" tabindex="-1">Previous</span>
+					</li>`
+				}
+
+				for(i=1;i<=totalPages;i++){
+					row = row + `<li class="page-item ${i==globalCurrentPage? "active" : "" }"><span class="page-link">${i}</span></li>`;
+				}
+
+				if (globalCurrentPage < totalPages){
+					row = row + `<li class="page-item">
+						<span class="page-link">Next</span>
+						</li>`
+				}
+
+				$('#pagination').append(row);
+		}
+
+			function LoadData(searchQuery, currentPage) {
+				$("#tblUser tbody tr").remove();
+
+				$.ajax({
+					type: 'Get',
+					url: `/Users/GetUsers?searchQuery=${searchQuery}&currentPage=${currentPage}`,
+					dataType: 'json',
+					success: function (data) {
+						totalPages = data.totalPages;
+
+						if(totalPages>1){
+							LoadPaging();
+						}else if(data.users.length==0){
+							if(globalCurrentPage>1){
+								globalCurrentPage--;
+								LoadData(globalSearchQuery,globalCurrentPage);
+							}
+							else{
+								var msg = "<tr><td>No Data Found</td></tr>"
+								$('#tblUser tbody').append(msg);
+								$('#pagination').empty();
+
+							}
+						}else{
+							$("#pagination li").remove();
+						}
+
+						$.each(data.users, function (i, item) {
+							var rows = `
+								<tr>
+									<td>
+										${item.name}
+									</td>
+									<td>
+										${item.email}
+									</td>
+									<td>
+										${item.phoneNumber}
+									</td>
+									<td>
+										${item.address}
+									</td>
+									<td>
+										${item.roleName}
+									</td>
+									<td>
+										${item.gstNumber}
+									</td>
+									<td>
+										<a href="/Orders/Index?userId=${item.id}">
+											<p class="btn btn-primary btn-sm">View</p>
+										</a>
+									</td>
+								</tr>
+							`;
+
+						$('#tblUser tbody').append(rows);
+					});
+				},
+			});
+		}
+		})
+	</script>
+	}

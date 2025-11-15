@@ -1,0 +1,87 @@
+﻿@model PharmEazy.Models.DTO.EditUserDTO
+
+@{
+	bool isAdmin = User.IsInRole("Admin");
+}
+
+<div class="row">
+	<div class="col-md-8 offset-2">
+		<form id="editUserForm">
+			<h1>Edit Account</h1>
+			<hr />
+			<div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+			<input asp-for="Id" hidden />
+			<div class="form-floating mb-3">
+				<input asp-for="Name" class="form-control" autocomplete="Name" aria-required="true" placeholder="Enter Your Name" />
+				<label asp-for="Name">Name</label>
+				<span asp-validation-for="Name" class="text-danger"></span>
+			</div>
+
+
+			<div class="form-floating mb-3">
+				<input readonly asp-for="Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Enter Your Email" />
+				<label asp-for="Email">Email</label>
+				<span asp-validation-for="Email" class="text-danger"></span>
+			</div>
+
+			<div class="form-floating mb-3">
+				<input type="tel" asp-for="PhoneNumber" class="form-control" autocomplete="PhoneNumber" aria-required="true" placeholder="Enter Your Phone Number" />
+				<label asp-for="PhoneNumber">PhoneNumber</label>
+				<span asp-validation-for="PhoneNumber" class="text-danger"></span>
+			</div>
+
+			<div class="form-floating mb-3">
+				<input asp-for="Address" class="form-control" autocomplete="Address" aria-required="true" placeholder="Enter Your Address" />
+				<label asp-for="Address">Address</label>
+				<span asp-validation-for="Address" class="text-danger"></span>
+			</div>
+
+			<div class="form-floating mb-3">
+				<input type="date" asp-for="DateOfBirth" class="form-control" autocomplete="Address" aria-required="true" placeholder="Enter Your Date Of Birth" />
+				<label asp-for="DateOfBirth">Date Of Birth</label>
+				<span asp-validation-for="DateOfBirth" class="text-danger"></span>
+			</div>
+
+			@if (isAdmin)
+			{
+				<div class="form-floating mb-3">
+					<input asp-for="GstNumber" class="form-control" autocomplete="GstNumber" aria-required="true" placeholder="Enter Your Gst Number" />
+					<label asp-for="GstNumber">Gst Number</label>
+					<span asp-validation-for="GstNumber" class="text-danger"></span>
+				</div>
+			}
+			<button id="registerSubmit" type="submit" class="w-100 btn btn-lg btn-primary">Update</button>
+		</form>
+	</div>
+</div>
+
+@section Scripts {
+	<partial name="_ValidationScriptsPartial" />
+
+	<script>
+		$("#editUserForm").on('submit',function(e){
+			e.preventDefault();
+			var data = $("#editUserForm").serialize();
+
+			$.ajax({
+				type: 'POST',
+				url: "@Url.Action("EditUser", "Users")",
+				contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+				data: data,
+				success: function (result) {
+					if(result.success==true){
+						notyf.success(result.message);
+					}else{
+						notyf.error(result.message);
+					}
+				}
+			});
+		});
+
+		var currentDate = new Date().toISOString().substring(0,10);
+
+		$("#Input_DateOfBirth").prop('max', currentDate);
+	</script>
+
+}
+

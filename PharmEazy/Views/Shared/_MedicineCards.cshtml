@@ -1,0 +1,59 @@
+﻿@model List<PharmEazy.Models.Medicine>
+
+@{
+	var isBuyer = ViewBag.isBuyer ?? true;
+	var userId = ViewBag.userId;
+	var totalPages = TempData["totalPages"];
+}
+
+@if (Model.Count > 0)
+{
+	@foreach (var medicine in Model)
+	{
+		var availableIndex = 0;
+		for (var ind = 0; ind < medicine.stocks.Count; ind++)
+		{
+			if (medicine.stocks[ind].Quantity > 0)
+			{
+				availableIndex = ind;
+				break;
+			}
+		}
+
+		<a class="text-decoration-none" href="/Medicine/MedicineDetail/@medicine.Id">
+			<div class="col">
+				<div class="card h-100 shadow-sm">
+					<img height="200" src="/Images/@medicine.ImageUrl" class="card-img-top" alt="@medicine.Name">
+					<div class="card-body">
+						<h5 class="card-title">@medicine.Name</h5>
+						<p class="card-text">@medicine.Description</p>
+						<div class="d-flex justify-content-between align-items-center">
+							<span class="h5 mb-0">₹@medicine.stocks[availableIndex].Price</span>
+
+							@if (medicine.stocks[availableIndex].Quantity != 0)
+							{
+								<span class="cartQuantityContainer">
+									<span class="btn btn-secondary decreaseQuantity btn-sm">-</span>
+									<span class="cartQuantityCount">1</span>
+									<span hidden class="availableStock">@medicine.stocks[availableIndex].Quantity</span>
+									<span class="btn btn-secondary btn-sm increaseQuantity">+</span>
+								</span>
+								<span class="btn btn-danger btn-sm addToCartBtn"><i class="fa-solid fa-cart-shopping"></i></span>
+								<span hidden class="medicineId">@medicine.Id</span>
+								<span hidden class="stockId">@medicine.stocks[availableIndex].Id</span>
+							}
+						</div>
+					</div>
+					@if (medicine.stocks[availableIndex].Quantity <= 0)
+					{
+						<div class="outOfStock">Out Of Stock</div>
+					}
+				</div>
+			</div>
+		</a>
+	}
+}
+else
+{
+	<h5>No Data Found</h5>
+}
